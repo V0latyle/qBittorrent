@@ -111,9 +111,10 @@ TorrentShareLimitsWidget::TorrentShareLimitsWidget(QWidget *parent)
     m_ui->comboBoxAction->addItem(shareLimitActionName(BitTorrent::ShareLimitAction::EnableSuperSeeding));
     m_ui->comboBoxAction->setCurrentIndex(UninitializedActionIndex);
 
-    m_ui->comboBoxMode->addItem({});
+   m_ui->comboBoxMode->addItem({});
     m_ui->comboBoxMode->addItem(shareLimitsModeName(BitTorrent::ShareLimitsMode::MatchAny));
     m_ui->comboBoxMode->addItem(shareLimitsModeName(BitTorrent::ShareLimitsMode::MatchAll));
+    m_ui->comboBoxMode->addItem(shareLimitsModeName(BitTorrent::ShareLimitsMode::MatchSelected));
     m_ui->comboBoxMode->setCurrentIndex(UninitializedModeIndex);
 
     resetDefaultItemsText();
@@ -243,6 +244,28 @@ void TorrentShareLimitsWidget::setShareLimitsMode(const BitTorrent::ShareLimitsM
     case BitTorrent::ShareLimitsMode::MatchAll:
         m_ui->comboBoxMode->setCurrentIndex(MatchAllModeIndex);
         break;
+    case BitTorrent::ShareLimitsMode::MatchSelected:
+        m_ui->comboBoxMode->setCurrentIndex(MatchSelectedModeIndex);
+        break;
+    }
+}
+
+// ... setDefaults function remains identical ...
+
+std::optional<BitTorrent::ShareLimitsMode> TorrentShareLimitsWidget::shareLimitsMode() const
+{
+    switch (m_ui->comboBoxMode->currentIndex())
+    {
+    case DefaultModeIndex:
+        return BitTorrent::ShareLimitsMode::Default;
+    case MatchAnyModeIndex:
+        return BitTorrent::ShareLimitsMode::MatchAny;
+    case MatchAllModeIndex:
+        return BitTorrent::ShareLimitsMode::MatchAll;
+    case MatchSelectedModeIndex:
+        return BitTorrent::ShareLimitsMode::MatchSelected;
+    default:
+        return std::nullopt;
     }
 }
 
