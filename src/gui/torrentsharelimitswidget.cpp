@@ -69,18 +69,31 @@ namespace
         {
         case BitTorrent::ShareLimitsMode::MatchAny:
             return TorrentShareLimitsWidget::tr("Match any limit");
-
         case BitTorrent::ShareLimitsMode::MatchAll:
             return TorrentShareLimitsWidget::tr("Match all the limits");
-
         case BitTorrent::ShareLimitsMode::MatchSelected:
             return TorrentShareLimitsWidget::tr("Selected combinations");
-
         case BitTorrent::ShareLimitsMode::Default:
             return TorrentShareLimitsWidget::tr("Default");
         }
+        return {}; 
+    }
 
-        return {};
+    QString shareLimitActionName(const BitTorrent::ShareLimitAction action)
+    {
+        switch (action)
+        {
+        case BitTorrent::ShareLimitAction::Stop:
+            return TorrentShareLimitsWidget::tr("Stop seeding");
+        case BitTorrent::ShareLimitAction::Remove:
+            return TorrentShareLimitsWidget::tr("Remove torrent");
+        case BitTorrent::ShareLimitAction::RemoveWithContent:
+            return TorrentShareLimitsWidget::tr("Remove torrent and its files");
+        case BitTorrent::ShareLimitAction::EnableSuperSeeding:
+            return TorrentShareLimitsWidget::tr("Enable super seeding");
+        default:
+            return TorrentShareLimitsWidget::tr("Default");
+        }
     }
 }
 TorrentShareLimitsWidget::TorrentShareLimitsWidget(QWidget *parent)
