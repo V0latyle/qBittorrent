@@ -182,6 +182,9 @@ jobs:
         run: |
           mkdir upload
           mkdir upload/qBittorrent
+                - name: List build directory
+          echo "Looking for qbittorrent.exe..."
+          Get-ChildItem -Path build -Filter qbittorrent.exe -Recurse | Select-Object -ExpandProperty FullName
           # binaries
           copy build/src/qbittorrent.exe upload/qBittorrent
           copy build/src/qbittorrent.pdb upload/qBittorrent
