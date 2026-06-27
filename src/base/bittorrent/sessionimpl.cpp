@@ -2408,6 +2408,26 @@ void SessionImpl::processTorrentShareLimits(TorrentImpl *torrent)
             description = tr("Torrent reached the inactive seeding time limit.");
         }
     }
+    else if (shareLimits.mode == ShareLimitsMode::MatchSelected)
+    {
+        // Primary conditions (Ratio or Seeding Time limit hit)
+        const qreal ratio = torrent->realRatio();
+        const bool ratioLimitHit = (shareLimits.ratioLimit >= 0) && (ratio >= shareLimits.ratioLimit);
+
+        const qlonglong seedingTimeInMinutes = torrent->finishedTime() / 60;
+        const bool seedingTimeLimitHit = (shareLimits.seedingTimeLimit >= 0) && (seedingTimeInMinutes >= shareLimits.seedingTimeLimit);
+
+        // Secondary fallback condition (Inactive Seeding Time limit hit)
+        const qlonglong inactiveSeedingTimeInMinutes = torrent->timeSinceActivity() / 60;
+        const bool inactiveLimitHit = (shareLimits.inactiveSeedingTimeLimit >= 0) && (inactiveSeedingTimeInMinutes >= shareLimits.inactiveSeedingTimeLimit);
+
+        // Logic target: (Ratio OR Seeding Time) AND Inactive Seeding Time
+        if ((ratioLimitHit || seedingTimeLimitHit) && inactiveLimitHit)
+        {
+            reached = true;
+            description = tr("Torrent reached its targeted share limits and has become inactive.");
+        }
+    }
     else
     {
         reached = true;
