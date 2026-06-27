@@ -1,9 +1,4 @@
-/*
- * Bittorrent Client using Qt and libtorrent.
- * Copyright (C) 2015-2026  Vladimir Golovnev <glassez@yandex.ru>
- * Copyright (C) 2006  Christophe Dumez <chris@qbittorrent.org>
- *
- * This program is free software; you can redistribute it and/or
+/ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
@@ -38,6 +33,9 @@ namespace BitTorrent
 
     inline const int DEFAULT_SEEDING_TIME_LIMIT = -2;
     inline const int NO_SEEDING_TIME_LIMIT = -1;
+
+    inline const int DEFAULT_INACTIVE_SEEDING_TIME_LIMIT = -2;
+    inline const int NO_INACTIVE_SEEDING_TIME_LIMIT = -1;
 
     // Using `Q_ENUM_NS()` without a wrapper namespace in our case is not advised
     // since `Q_NAMESPACE` cannot be used when the same namespace resides at different files.
@@ -75,7 +73,7 @@ namespace BitTorrent
     {
         qreal ratioLimit = DEFAULT_RATIO_LIMIT;
         int seedingTimeLimit = DEFAULT_SEEDING_TIME_LIMIT;
-        int inactiveSeedingTimeLimit = DEFAULT_SEEDING_TIME_LIMIT;
+        int inactiveSeedingTimeLimit = DEFAULT_INACTIVE_SEEDING_TIME_LIMIT;
 
         ShareLimitsMode mode = ShareLimitsMode::Default;
 
