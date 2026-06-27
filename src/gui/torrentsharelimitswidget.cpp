@@ -76,7 +76,7 @@ namespace
         case BitTorrent::ShareLimitsMode::Default:
             return TorrentShareLimitsWidget::tr("Default");
         }
-        return {}; 
+        return {};
     }
 
     QString shareLimitActionName(const BitTorrent::ShareLimitAction action)
