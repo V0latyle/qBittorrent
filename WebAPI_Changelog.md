@@ -1,6 +1,12 @@
 # WebAPI Changelog
 
 ## 2.16.0
+* # WebAPI Changelog
+
+## 2.16.0
+* [#<PR_NUMBER>]
+  * `torrents/setShareLimits` parameter `shareLimitsMode` now accepts `MatchSelected` value
+  * `app/preferences` and `app/setPreferences` option `share_limits_mode` now accepts `MatchSelected` value
 * [#23989](https://github.com/qbittorrent/qBittorrent/pull/23989)
   * `sync/torrentPeers` endpoint now includes calculated `contribution` to a peer's progress
 * [#24346](https://github.com/qbittorrent/qBittorrent/pull/24346)
