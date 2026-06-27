@@ -68,6 +68,7 @@ namespace BitTorrent
         std::optional<bool> useAutoTMM;
         int uploadLimit = -1;
         int downloadLimit = -1;
+        int inactiveSeedingTimeLimit = -1;
         ShareLimits shareLimits;
         SSLParameters sslParameters;
 
