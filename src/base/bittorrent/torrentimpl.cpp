@@ -1391,9 +1391,11 @@ qlonglong TorrentImpl::eta() const
 
     if (isFinished())
     {
-        const qint64 ZERO_ETA = 0;
-
         const ShareLimits shareLimits = effectiveShareLimits();
+        if ((shareLimits.ratioLimit < 0) && (shareLimits.seedingTimeLimit < 0) && (shareLimits.inactiveSeedingTimeLimit < 0))
+            return MAX_ETA;
+
+        const qint64 ZERO_ETA = 0;
         QList<qint64> etaList;
 
         if (shareLimits.ratioLimit >= 0)
@@ -1405,6 +1407,7 @@ qlonglong TorrentImpl::eta() const
             const qreal uploadLimit = realDL * shareLimits.ratioLimit;
             const qint64 uploaded = totalUpload();
             qint64 ratioEta = ZERO_ETA;
+            
             if (uploadLimit > uploaded)
             {
                 ratioEta = (speedAverage.upload > 0)
@@ -1431,9 +1434,11 @@ qlonglong TorrentImpl::eta() const
         if (etaList.isEmpty())
             return MAX_ETA;
 
-        return (shareLimits.mode == ShareLimitsMode::MatchAny)
-                ? std::ranges::min(etaList)
-                : std::ranges::max(etaList);
+        if (shareLimits.mode == ShareLimitsMode::MatchAny)
+            return std::ranges::min(etaList);
+        
+        // MatchAll and MatchSelected both calculate the maximum remaining time required
+        return std::ranges::max(etaList);
     }
 
     if (!speedAverage.download)
