@@ -3234,6 +3234,13 @@ Disable encryption: Only connect to peers without protocol encryption</string>
                   </widget>
                  </item>
                  <item>
+                  <widget class="QRadioButton" name="radioButtonShareLimitsModeSelected">
+                   <property name="text">
+                    <string>Selected combinations</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
                   <spacer name="horizontalSpacer_25">
                    <property name="orientation">
                     <enum>Qt::Orientation::Horizontal</enum>
