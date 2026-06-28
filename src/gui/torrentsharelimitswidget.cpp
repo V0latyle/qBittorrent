@@ -378,21 +378,6 @@ std::optional<int> TorrentShareLimitsWidget::inactiveSeedingTimeLimit() const
     }
 }
 
-std::optional<BitTorrent::ShareLimitsMode> TorrentShareLimitsWidget::shareLimitsMode() const
-{
-    switch (m_ui->comboBoxMode->currentIndex())
-    {
-    case DefaultModeIndex:
-        return BitTorrent::ShareLimitsMode::Default;
-    case MatchAnyModeIndex:
-        return BitTorrent::ShareLimitsMode::MatchAny;
-    case MatchAllModeIndex:
-        return BitTorrent::ShareLimitsMode::MatchAll;
-    default:
-        return std::nullopt;
-    }
-}
-
 std::optional<BitTorrent::ShareLimitAction> TorrentShareLimitsWidget::shareLimitAction() const
 {
     switch (m_ui->comboBoxAction->currentIndex())
