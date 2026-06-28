@@ -184,9 +184,10 @@ jobs:
           mkdir upload/qBittorrent
           
           # Dynamically find and copy the executable and debug symbols
-          $bin = Get-ChildItem -Path build -Filter "qbittorrent.exe" -Recurse | Select-Object -First 1
-          copy $bin.FullName upload/qBittorrent/
-          copy ($bin.FullName -replace '\.exe$', '.pdb') upload/qBittorrent/
+          $bin = Get-ChildItem -Path build -Filter "*bittorrent*.exe" -Recurse | Select-Object -First 1
+          copy $bin.FullName upload/qBittorrent/qbittorrent.exe
+          copy ($bin.FullName -replace '\.exe$', '.pdb') upload/qBittorrent/qbittorrent.pdb
+
           
           copy dist/windows/qt.conf upload/qBittorrent
           
