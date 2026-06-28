@@ -1,9 +1,6 @@
 name: CI - Python
 
-on: 
-  pull_request:
-  push:
-  workflow_dispatch:  # <--- Added this line
+on: [workflow_dispatch]
 
 permissions: {}
 
