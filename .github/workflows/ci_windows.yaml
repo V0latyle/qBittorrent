@@ -182,15 +182,15 @@ jobs:
         run: |
           mkdir upload
           mkdir upload/qBittorrent
-          
+
           # Dynamically find and copy the executable and debug symbols
           $bin = Get-ChildItem -Path build -Filter "*bittorrent*.exe" -Recurse | Select-Object -First 1
           copy $bin.FullName upload/qBittorrent/qbittorrent.exe
           copy ($bin.FullName -replace '\.exe$', '.pdb') upload/qBittorrent/qbittorrent.pdb
 
-          
+
           copy dist/windows/qt.conf upload/qBittorrent
-          
+
           # runtimes
           copy "${{ env.Qt_ROOT_DIR }}/bin/Qt6Core.dll" upload/qBittorrent
           copy "${{ env.Qt_ROOT_DIR }}/bin/Qt6Gui.dll" upload/qBittorrent
@@ -199,10 +199,10 @@ jobs:
           copy "${{ env.Qt_ROOT_DIR }}/bin/Qt6Svg.dll" upload/qBittorrent
           copy "${{ env.Qt_ROOT_DIR }}/bin/Qt6Widgets.dll" upload/qBittorrent
           copy "${{ env.Qt_ROOT_DIR }}/bin/Qt6Xml.dll" upload/qBittorrent
-          
+
           mkdir upload/qBittorrent/plugins/iconengines
           copy "${{ env.Qt_ROOT_DIR }}/plugins/iconengines/qsvgicon.dll" upload/qBittorrent/plugins/iconengines
-          
+
           mkdir upload/qBittorrent/plugins/imageformats
           # include all imageformats dlls since CI (dev) build links dynamically
           copy "${{ env.Qt_ROOT_DIR }}/plugins/imageformats/qgif.dll" upload/qBittorrent/plugins/imageformats
@@ -214,24 +214,24 @@ jobs:
           copy "${{ env.Qt_ROOT_DIR }}/plugins/imageformats/qtiff.dll" upload/qBittorrent/plugins/imageformats
           copy "${{ env.Qt_ROOT_DIR }}/plugins/imageformats/qwbmp.dll" upload/qBittorrent/plugins/imageformats
           copy "${{ env.Qt_ROOT_DIR }}/plugins/imageformats/qwebp.dll" upload/qBittorrent/plugins/imageformats
-          
+
           mkdir upload/qBittorrent/plugins/platforms
           copy "${{ env.Qt_ROOT_DIR }}/plugins/platforms/qwindows.dll" upload/qBittorrent/plugins/platforms
-          
+
           mkdir upload/qBittorrent/plugins/sqldrivers
           copy "${{ env.Qt_ROOT_DIR }}/plugins/sqldrivers/qsqlite.dll" upload/qBittorrent/plugins/sqldrivers
-          
+
           mkdir upload/qBittorrent/plugins/styles
           copy "${{ env.Qt_ROOT_DIR }}/plugins/styles/qmodernwindowsstyle.dll" upload/qBittorrent/plugins/styles
-          
+
           mkdir upload/qBittorrent/plugins/tls
           copy "${{ env.Qt_ROOT_DIR }}/plugins/tls/qschannelbackend.dll" upload/qBittorrent/plugins/tls
-          
+
           # cmake additionals
           mkdir upload/cmake
           copy build/compile_commands.json upload/cmake
           copy build/target_graph.dot upload/cmake
-          
+
           mkdir upload/cmake/libtorrent
           copy ${{ env.libtorrent_path }}/build/compile_commands.json upload/cmake/libtorrent
       - name: Upload build artifacts
