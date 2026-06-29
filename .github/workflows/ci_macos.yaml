@@ -138,7 +138,7 @@ jobs:
           else
             build/qbittorrent-nox.app/Contents/MacOS/qbittorrent-nox -v
           fi
-        
+
       - name: Prepare build artifacts
         run: |
           appName="qbittorrent"
