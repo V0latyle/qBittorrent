@@ -1407,7 +1407,7 @@ qlonglong TorrentImpl::eta() const
 
             const qreal uploadLimit = realDL * shareLimits.ratioLimit;
             const qint64 uploaded = totalUpload();
-            
+
             if (uploadLimit > uploaded)
             {
                 ratioEta = (speedAverage.upload > 0)
