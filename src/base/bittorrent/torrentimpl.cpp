@@ -1398,6 +1398,7 @@ qlonglong TorrentImpl::eta() const
         const qint64 ZERO_ETA = 0;
         QList<qint64> etaList;
 
+        qint64 ratioEta = ZERO_ETA;
         if (shareLimits.ratioLimit >= 0)
         {
             qint64 realDL = totalDownload();
@@ -1406,8 +1407,7 @@ qlonglong TorrentImpl::eta() const
 
             const qreal uploadLimit = realDL * shareLimits.ratioLimit;
             const qint64 uploaded = totalUpload();
-            qint64 ratioEta = ZERO_ETA;
-
+            
             if (uploadLimit > uploaded)
             {
                 ratioEta = (speedAverage.upload > 0)
@@ -1417,16 +1417,18 @@ qlonglong TorrentImpl::eta() const
             etaList.append(ratioEta);
         }
 
+        qint64 seedingTimeEta = MAX_ETA;
         if (shareLimits.seedingTimeLimit >= 0)
         {
-            const qint64 seedingTimeEta = std::max(
+            seedingTimeEta = std::max(
                     ((shareLimits.seedingTimeLimit * 60) - finishedTime()), ZERO_ETA);
             etaList.append(seedingTimeEta);
         }
 
+        qint64 inactiveSeedingTimeEta = MAX_ETA;
         if (shareLimits.inactiveSeedingTimeLimit >= 0)
         {
-            const qint64 inactiveSeedingTimeEta = std::max(
+            inactiveSeedingTimeEta = std::max(
                     ((shareLimits.inactiveSeedingTimeLimit * 60) - timeSinceActivity()), ZERO_ETA);
             etaList.append(inactiveSeedingTimeEta);
         }
@@ -1437,7 +1439,26 @@ qlonglong TorrentImpl::eta() const
         if (shareLimits.mode == ShareLimitsMode::MatchAny)
             return std::ranges::min(etaList);
 
-        // MatchAll and MatchSelected both calculate the maximum remaining time required
+        if (shareLimits.mode == ShareLimitsMode::MatchSelected)
+        {
+            // Primary constraints (Ratio OR Total Seeding Time)
+            qint64 primaryEta = MAX_ETA;
+            if (shareLimits.ratioLimit >= 0)
+                primaryEta = std::min(primaryEta, ratioEta);
+            if (shareLimits.seedingTimeLimit >= 0)
+                primaryEta = std::min(primaryEta, seedingTimeEta);
+
+            // If no primary limits are set, we look at the fallback condition directly
+            if (primaryEta == MAX_ETA)
+                return (shareLimits.inactiveSeedingTimeLimit >= 0) ? inactiveSeedingTimeEta : MAX_ETA;
+
+            // Secondary constraint (Inactive Seeding Time) acts as the ultimate gatekeeper (AND)
+            qint64 fallbackEta = (shareLimits.inactiveSeedingTimeLimit >= 0) ? inactiveSeedingTimeEta : ZERO_ETA;
+
+            return std::max(primaryEta, fallbackEta);
+        }
+
+        // MatchAll calculates the maximum remaining time required across all rules
         return std::ranges::max(etaList);
     }
 
