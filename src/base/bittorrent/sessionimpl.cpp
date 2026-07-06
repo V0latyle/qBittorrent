@@ -2404,23 +2404,20 @@ void SessionImpl::processTorrentShareLimits(TorrentImpl *torrent)
         const bool primaryGoalSatisfied = (!hasPrimaryLimits) || isRatioMet || isSeedingTimeMet;
 
         // 3. Process the outcomes sequentially
-        if (isRatioMet)
-        {
-            reached = true;
-            description = tr("Torrent reached the share ratio limit.");
-        }
-        else if (isSeedingTimeMet)
-        {
-            reached = true;
-            description = tr("Torrent reached the seeding time limit.");
-        }
-        else if (primaryGoalSatisfied && (shareLimits.inactiveSeedingTimeLimit >= 0))
+        // The torrent only triggers an action if a primary goal is satisfied AND the inactive limit is breached.
+        if (primaryGoalSatisfied && (shareLimits.inactiveSeedingTimeLimit >= 0))
         {
             const qlonglong inactiveSeedingTimeInMinutes = torrent->timeSinceActivity() / 60;
             if (inactiveSeedingTimeInMinutes >= shareLimits.inactiveSeedingTimeLimit)
             {
                 reached = true;
-                description = tr("Torrent reached the inactive seeding time limit.");
+                
+                if (isRatioMet)
+                    description = tr("Torrent reached the share ratio limit and became inactive.");
+                else if (isSeedingTimeMet)
+                    description = tr("Torrent reached the seeding time limit and became inactive.");
+                else
+                    description = tr("Torrent reached the inactive seeding time limit.");
             }
         }
     }
