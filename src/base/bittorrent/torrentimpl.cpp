@@ -1426,7 +1426,7 @@ qlonglong TorrentImpl::eta() const
         {
             const qlonglong activitySec = timeSinceActivity();
             const qlonglong elapsedInactivity = (activitySec >= 0) ? activitySec : 0;
-            
+
             inactiveSeedingTimeEta = std::max(
                     ((shareLimits.inactiveSeedingTimeLimit * 60) - elapsedInactivity), ZERO_ETA);
         }
@@ -1440,10 +1440,10 @@ qlonglong TorrentImpl::eta() const
             if (seedingTimeEta >= 0) activePrimaryEtas.append(seedingTimeEta);
 
             const bool hasPrimaryLimits = !activePrimaryEtas.isEmpty();
-            
+
             // Primary goals are satisfied if none are set, or if at least one has reached 0
-            const bool primaryGoalSatisfied = !hasPrimaryLimits 
-                || (ratioEta == ZERO_ETA) 
+            const bool primaryGoalSatisfied = !hasPrimaryLimits
+                || (ratioEta == ZERO_ETA)
                 || (seedingTimeEta == ZERO_ETA);
 
             // If a primary milestone has been cleared, the true remaining time is exclusively the inactive countdown
