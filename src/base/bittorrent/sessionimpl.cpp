@@ -2411,7 +2411,7 @@ void SessionImpl::processTorrentShareLimits(TorrentImpl *torrent)
             if (inactiveSeedingTimeInMinutes >= shareLimits.inactiveSeedingTimeLimit)
             {
                 reached = true;
-                
+
                 if (isRatioMet)
                     description = tr("Torrent reached the share ratio limit and became inactive.");
                 else if (isSeedingTimeMet)
