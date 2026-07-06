@@ -1424,8 +1424,11 @@ qlonglong TorrentImpl::eta() const
 
         if (shareLimits.inactiveSeedingTimeLimit >= 0)
         {
+            const qlonglong activitySec = timeSinceActivity();
+            const qlonglong elapsedInactivity = (activitySec >= 0) ? activitySec : 0;
+            
             inactiveSeedingTimeEta = std::max(
-                    ((shareLimits.inactiveSeedingTimeLimit * 60) - timeSinceActivity()), ZERO_ETA);
+                    ((shareLimits.inactiveSeedingTimeLimit * 60) - elapsedInactivity), ZERO_ETA);
         }
 
         // 2. Resolve final UI ETA based on configuration mode
@@ -1437,35 +1440,31 @@ qlonglong TorrentImpl::eta() const
             if (seedingTimeEta >= 0) activePrimaryEtas.append(seedingTimeEta);
 
             const bool hasPrimaryLimits = !activePrimaryEtas.isEmpty();
-
+            
             // Primary goals are satisfied if none are set, or if at least one has reached 0
-            const bool primaryGoalSatisfied = !hasPrimaryLimits
-                || (ratioEta == ZERO_ETA)
+            const bool primaryGoalSatisfied = !hasPrimaryLimits 
+                || (ratioEta == ZERO_ETA) 
                 || (seedingTimeEta == ZERO_ETA);
 
-            // Collect valid candidates for MatchAny
-            QList<qint64> validCandidates;
+            // If a primary milestone has been cleared, the true remaining time is exclusively the inactive countdown
+            if (primaryGoalSatisfied && (inactiveSeedingTimeEta >= 0))
+            {
+                return inactiveSeedingTimeEta;
+            }
 
-            // Add primary ETAs that haven't finished yet
+            // Otherwise, find out which primary goals are still counting down
+            QList<qint64> activePrimaryCountdowns;
             for (qint64 etaVal : activePrimaryEtas)
             {
                 if (etaVal > ZERO_ETA)
-                    validCandidates.append(etaVal);
+                    activePrimaryCountdowns.append(etaVal);
             }
 
-            // Inactive ETA is only a valid candidate if the primary gate is clear
-            if (primaryGoalSatisfied && (inactiveSeedingTimeEta >= 0))
-                validCandidates.append(inactiveSeedingTimeEta);
+            if (activePrimaryCountdowns.isEmpty())
+                return MAX_ETA;
 
-            // Fallback options if things are already achieved or empty
-            if (validCandidates.isEmpty())
-            {
-                if (primaryGoalSatisfied && (inactiveSeedingTimeEta >= 0))
-                    return ZERO_ETA;
-                return (!activePrimaryEtas.isEmpty()) ? ZERO_ETA : MAX_ETA;
-            }
-
-            return std::ranges::min(validCandidates);
+            // Display the closest ticking primary milestone
+            return std::ranges::min(activePrimaryCountdowns);
         }
         else
         {
