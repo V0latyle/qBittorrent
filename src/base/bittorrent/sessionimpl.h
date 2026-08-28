@@ -308,6 +308,8 @@ namespace BitTorrent
         void setPeerTurnoverInterval(int val) override;
         int requestQueueSize() const override;
         void setRequestQueueSize(int val) override;
+        int maxOutstandingBlockRequests() const override;
+        void setMaxOutstandingBlockRequests(int val) override;
         int asyncIOThreads() const override;
         void setAsyncIOThreads(int num) override;
         int hashingThreads() const override;
@@ -629,6 +631,9 @@ namespace BitTorrent
         void handleSaveResumeDataFailedAlert(const lt::save_resume_data_failed_alert *alert);
         void handleTorrentCheckedAlert(const lt::torrent_checked_alert *alert);
         void handleTorrentFinishedAlert(const lt::torrent_finished_alert *alert);
+#if LIBTORRENT_VERSION_NUM >= 20101
+        void handleIPBanAlert(const lt::ip_ban_alert *alert);
+#endif
 
         TorrentImpl *createTorrent(const lt::torrent_handle &nativeHandle, LoadTorrentParams params);
         TorrentImpl *getTorrent(const lt::torrent_handle &nativeHandle) const;
@@ -784,6 +789,7 @@ namespace BitTorrent
         CachedSettingValue<int> m_peerTurnoverCutoff;
         CachedSettingValue<int> m_peerTurnoverInterval;
         CachedSettingValue<int> m_requestQueueSize;
+        CachedSettingValue<int> m_maxOutstandingBlockRequests;
         CachedSettingValue<bool> m_isExcludedFileNamesEnabled;
         CachedSettingValue<QStringList> m_excludedFileNames;
         CachedSettingValue<QStringList> m_bannedIPs;

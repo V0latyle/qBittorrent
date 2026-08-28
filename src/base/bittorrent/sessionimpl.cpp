@@ -615,6 +615,7 @@ SessionImpl::SessionImpl(QObject *parent)
     , m_peerTurnoverCutoff(BITTORRENT_SESSION_KEY(u"PeerTurnoverCutOff"_s), 90)
     , m_peerTurnoverInterval(BITTORRENT_SESSION_KEY(u"PeerTurnoverInterval"_s), 300)
     , m_requestQueueSize(BITTORRENT_SESSION_KEY(u"RequestQueueSize"_s), 500)
+    , m_maxOutstandingBlockRequests(BITTORRENT_SESSION_KEY(u"MaxOutstandingBlockRequests"_s), 2000)
     , m_isExcludedFileNamesEnabled(BITTORRENT_KEY(u"ExcludedFileNamesEnabled"_s), false)
     , m_excludedFileNames(BITTORRENT_SESSION_KEY(u"ExcludedFileNames"_s))
     , m_bannedIPs(u"State/BannedIPs"_s, QStringList(), Algorithm::sorted<QStringList>)
@@ -1166,6 +1167,7 @@ bool SessionImpl::setCategoryOptions(const QString &categoryName, const Category
 
     currentOptions = options;
     storeCategories();
+    updateShareLimitsTimer();
 
     for (TorrentImpl *const torrent : asConst(m_torrents))
     {
@@ -1344,6 +1346,8 @@ void SessionImpl::setShareLimits(ShareLimits shareLimits)
         m_globalMaxInactiveSeedingMinutes = shareLimits.inactiveSeedingTimeLimit;
         m_shareLimitAction = shareLimits.action;
         m_shareLimitsMode = shareLimits.mode;
+
+        updateShareLimitsTimer();
     }
 }
 
@@ -2058,6 +2062,7 @@ lt::settings_pack SessionImpl::loadLTSettings() const
     settingsPack.set_int(lt::settings_pack::peer_turnover_interval, peerTurnoverInterval());
 
     settingsPack.set_int(lt::settings_pack::max_out_request_queue, requestQueueSize());
+    settingsPack.set_int(lt::settings_pack::max_allowed_in_request_queue, maxOutstandingBlockRequests());
 
 #ifdef QBT_USES_LIBTORRENT2
     settingsPack.set_int(lt::settings_pack::metadata_token_limit, Preferences::instance()->getBdecodeTokenLimit());
@@ -2787,7 +2792,7 @@ LoadTorrentParams SessionImpl::initLoadTorrentParams(const AddTorrentParams &add
 
     loadTorrentParams.name = addTorrentParams.name;
     loadTorrentParams.firstLastPiecePriority = addTorrentParams.firstLastPiecePriority;
-    loadTorrentParams.hasFinishedStatus = addTorrentParams.skipChecking; // do not react on 'torrent_finished_alert' when skipping
+    loadTorrentParams.hasFinishedStatus = addTorrentParams.seedMode; // do not react on 'torrent_finished_alert' when skipping
     loadTorrentParams.contentLayout = addTorrentParams.contentLayout.value_or(torrentContentLayout());
     loadTorrentParams.operatingMode = (addTorrentParams.addForced ? TorrentOperatingMode::Forced : TorrentOperatingMode::AutoManaged);
     loadTorrentParams.stopped = addTorrentParams.addStopped.value_or(isAddTorrentStopped());
@@ -3042,7 +3047,7 @@ bool SessionImpl::addTorrent_impl(const TorrentDescriptor &torrentDescr, const A
 
     // Seeding mode
     // Skip checking and directly start seeding
-    if (addTorrentParams.skipChecking)
+    if (addTorrentParams.seedMode)
         p.flags |= lt::torrent_flags::seed_mode;
     else
         p.flags &= ~lt::torrent_flags::seed_mode;
@@ -4548,6 +4553,20 @@ void SessionImpl::setRequestQueueSize(const int val)
     configureDeferred();
 }
 
+int SessionImpl::maxOutstandingBlockRequests() const
+{
+    return m_maxOutstandingBlockRequests;
+}
+
+void SessionImpl::setMaxOutstandingBlockRequests(const int val)
+{
+    if (val == m_maxOutstandingBlockRequests)
+        return;
+
+    m_maxOutstandingBlockRequests = val;
+    configureDeferred();
+}
+
 int SessionImpl::asyncIOThreads() const
 {
     return std::clamp(m_asyncIOThreads.get(), 1, 1024);
@@ -5456,6 +5475,7 @@ void SessionImpl::handleTorrentSavePathChanged(TorrentImpl *const torrent)
 
 void SessionImpl::handleTorrentCategoryChanged(TorrentImpl *const torrent, const QString &oldCategory)
 {
+    updateShareLimitsTimer();
     emit torrentCategoryChanged(torrent, oldCategory);
 }
 
@@ -6141,6 +6161,11 @@ void SessionImpl::handleAlert(lt::alert *alert)
             handleTorrentConflictAlert(static_cast<const lt::torrent_conflict_alert *>(alert));
             break;
 #endif
+#if LIBTORRENT_VERSION_NUM >= 20101
+        case lt::ip_ban_alert::alert_type:
+            handleIPBanAlert(static_cast<const lt::ip_ban_alert *>(alert));
+            break;
+#endif
         }
     }
     catch (const std::exception &exc)
@@ -6206,7 +6231,11 @@ void SessionImpl::handleTorrentDeletedAlert(const lt::torrent_deleted_alert *ale
 void SessionImpl::handleTorrentDeleteFailedAlert(const lt::torrent_delete_failed_alert *alert)
 {
     const TorrentID torrentID = getInfoHash(*alert).toTorrentID();
+#if LIBTORRENT_VERSION_NUM >= 20100
+    const auto errorMessage = alert->error ? QString::fromStdString(alert->error.message()) : QString();
+#else
     const auto errorMessage = alert->error ? Utils::String::fromLocal8Bit(alert->error.message()) : QString();
+#endif
     handleRemovedTorrent(torrentID, errorMessage);
 }
 
@@ -6404,7 +6433,11 @@ void SessionImpl::handleListenFailedAlert(const lt::listen_failed_alert *alert)
     const QString proto {toString(alert->socket_type)};
     LogMsg(tr("Failed to listen on IP. IP: \"%1\". Port: \"%2/%3\". Reason: \"%4\"")
         .arg(toString(alert->address), proto, QString::number(alert->port)
+#if LIBTORRENT_VERSION_NUM >= 20100
+            , QString::fromStdString(alert->error.message())), Log::CRITICAL);
+#else
             , Utils::String::fromLocal8Bit(alert->error.message())), Log::CRITICAL);
+#endif
 }
 
 void SessionImpl::handleExternalIPAlert(const lt::external_ip_alert *alert)
@@ -6630,7 +6663,11 @@ void SessionImpl::handleSocks5Alert(const lt::socks5_alert *alert) const
         const QString endpoint = (addr.is_v6() ? u"[%1]:%2"_s : u"%1:%2"_s)
                 .arg(toString(addr), QString::number(alert->ip.port()));
         LogMsg(tr("SOCKS5 proxy error. Address: %1. Message: \"%2\".")
+#if LIBTORRENT_VERSION_NUM >= 20100
+                .arg(endpoint, QString::fromStdString(alert->error.message()))
+#else
                 .arg(endpoint, Utils::String::fromLocal8Bit(alert->error.message()))
+#endif
                 , Log::WARNING);
     }
 }
@@ -6736,6 +6773,14 @@ void SessionImpl::handleTorrentFinishedAlert([[maybe_unused]] const lt::torrent_
         torrent->handleTorrentFinished();
 }
 
+#if LIBTORRENT_VERSION_NUM >= 20101
+void SessionImpl::handleIPBanAlert(const lt::ip_ban_alert *alert)
+{
+    // an IP was banned by libtorrent internally
+    LogMsg(tr("IP banned by libtorrent. IP: %1.").arg(toString(alert->banned_address)), Log::INFO);
+}
+#endif
+
 void SessionImpl::handleSaveResumeDataAlert(lt::save_resume_data_alert *alert)
 {
     // The torrent can be deleted between the time the resume data was requested and
@@ -6761,7 +6806,11 @@ void SessionImpl::handleSaveResumeDataFailedAlert(const lt::save_resume_data_fai
     if (alert->error != lt::errors::resume_data_not_modified)
     {
         LogMsg(tr("Generate resume data failed. Torrent: \"%1\". Reason: \"%2\"")
+#if LIBTORRENT_VERSION_NUM >= 20100
+                .arg(torrent->name(), QString::fromStdString(alert->error.message())), Log::CRITICAL);
+#else
                 .arg(torrent->name(), Utils::String::fromLocal8Bit(alert->error.message())), Log::CRITICAL);
+#endif
     }
 }
 
@@ -6801,7 +6850,11 @@ void SessionImpl::handleFileRenameFailedAlert(const lt::file_rename_failed_alert
 
     LogMsg(tr("File rename failed. Torrent: \"%1\", file: \"%2\", reason: \"%3\"")
             .arg(torrent->name(), torrent->filePath(torrent->fileIndexFromNative(alert->index)).toString()
+#if LIBTORRENT_VERSION_NUM >= 20100
+                    , QString::fromStdString(alert->error.message())), Log::WARNING);
+#else
                     , Utils::String::fromLocal8Bit(alert->error.message())), Log::WARNING);
+#endif
 }
 
 void SessionImpl::handleFileCompletedAlert(const lt::file_completed_alert *alert)

@@ -1384,22 +1384,25 @@ void OptionsDialog::loadSearchTabOptions()
 {
     const auto *pref = Preferences::instance();
 
-    m_ui->groupStoreOpenedTabs->setChecked(pref->storeOpenedSearchTabs());
-    m_ui->checkStoreTabsSearchResults->setChecked(pref->storeOpenedSearchTabResults());
+    m_ui->groupStoreSearchJobs->setChecked(pref->storeSearchJobs());
+    m_ui->checkStoreSearchJobResults->setChecked(pref->storeSearchJobResults());
     m_ui->searchHistoryLengthSpinBox->setValue(pref->searchHistoryLength());
+    m_ui->checkCloseSearchTabWithMiddleClick->setChecked(pref->closeSearchTabWithMiddleClick());
 
-    connect(m_ui->groupStoreOpenedTabs, &QGroupBox::toggled, this, &OptionsDialog::enableApplyButton);
-    connect(m_ui->checkStoreTabsSearchResults, &QCheckBox::toggled, this, &OptionsDialog::enableApplyButton);
+    connect(m_ui->groupStoreSearchJobs, &QGroupBox::toggled, this, &OptionsDialog::enableApplyButton);
+    connect(m_ui->checkStoreSearchJobResults, &QCheckBox::toggled, this, &OptionsDialog::enableApplyButton);
     connect(m_ui->searchHistoryLengthSpinBox, qSpinBoxValueChanged, this, &OptionsDialog::enableApplyButton);
+    connect(m_ui->checkCloseSearchTabWithMiddleClick, &QCheckBox::toggled, this, &OptionsDialog::enableApplyButton);
 }
 
 void OptionsDialog::saveSearchTabOptions() const
 {
     auto *pref = Preferences::instance();
 
-    pref->setStoreOpenedSearchTabs(m_ui->groupStoreOpenedTabs->isChecked());
-    pref->setStoreOpenedSearchTabResults(m_ui->checkStoreTabsSearchResults->isChecked());
+    pref->setStoreSearchJobs(m_ui->groupStoreSearchJobs->isChecked());
+    pref->setStoreSearchJobResults(m_ui->checkStoreSearchJobResults->isChecked());
     pref->setSearchHistoryLength(m_ui->searchHistoryLengthSpinBox->value());
+    pref->setCloseSearchTabWithMiddleClick(m_ui->checkCloseSearchTabWithMiddleClick->isChecked());
 }
 
 #ifndef DISABLE_WEBUI
@@ -1443,6 +1446,7 @@ void OptionsDialog::loadWebUITabOptions()
     m_ui->spinBanCounter->setValue(pref->getWebUIMaxAuthFailCount());
     m_ui->spinBanDuration->setValue(pref->getWebUIBanDuration().count());
     m_ui->spinSessionTimeout->setValue(pref->getWebUISessionTimeout());
+    m_ui->spinBoxWebUISessionsCountLimit->setValue(pref->getWebUISessionsCountLimit());
     // Alternative UI
     m_ui->groupAltWebUI->setChecked(pref->isAltWebUIEnabled());
     m_ui->textWebUIRootFolder->setSelectedPath(pref->getWebUIRootFolder());
@@ -1487,6 +1491,7 @@ void OptionsDialog::loadWebUITabOptions()
     connect(m_ui->spinBanCounter, qSpinBoxValueChanged, this, &ThisType::enableApplyButton);
     connect(m_ui->spinBanDuration, qSpinBoxValueChanged, this, &ThisType::enableApplyButton);
     connect(m_ui->spinSessionTimeout, qSpinBoxValueChanged, this, &ThisType::enableApplyButton);
+    connect(m_ui->spinBoxWebUISessionsCountLimit, qSpinBoxValueChanged, this, &ThisType::enableApplyButton);
 
     connect(m_ui->groupAltWebUI, &QGroupBox::toggled, this, &ThisType::enableApplyButton);
     connect(m_ui->textWebUIRootFolder, &FileSystemPathLineEdit::selectedPathChanged, this, &ThisType::enableApplyButton);
@@ -1526,6 +1531,7 @@ void OptionsDialog::saveWebUITabOptions() const
     pref->setWebUIMaxAuthFailCount(m_ui->spinBanCounter->value());
     pref->setWebUIBanDuration(std::chrono::seconds {m_ui->spinBanDuration->value()});
     pref->setWebUISessionTimeout(m_ui->spinSessionTimeout->value());
+    pref->setWebUISessionsCountLimit(m_ui->spinBoxWebUISessionsCountLimit->value());
     // Authentication
     if (const QString username = webUIUsername(); isValidWebUIUsernameLength(username) && isValidWebUIUsernameCharacterSet(username))
         pref->setWebUIUsername(username);
