@@ -132,6 +132,7 @@ TorrentShareLimitsWidget::TorrentShareLimitsWidget(QWidget *parent)
     m_ui->comboBoxMode->addItem({});
     m_ui->comboBoxMode->addItem(shareLimitsModeName(BitTorrent::ShareLimitsMode::MatchAny));
     m_ui->comboBoxMode->addItem(shareLimitsModeName(BitTorrent::ShareLimitsMode::MatchAll));
+    m_ui->comboBoxMode->addItem(shareLimitsModeName(BitTorrent::ShareLimitsMode::Layered));
     m_ui->comboBoxMode->setCurrentIndex(UninitializedModeIndex);
 
     resetDefaultItemsText();
