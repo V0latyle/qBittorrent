@@ -95,7 +95,7 @@ namespace
             return TorrentShareLimitsWidget::tr("Match all the limits");
 
         case BitTorrent::ShareLimitsMode::Layered:
-            return TorrentShareLimitsWidget::tr("Two-stage (Primary or Inactive)");
+            return TorrentShareLimitsWidget::tr("Two-stage (Primary then Inactive)");
 
         case BitTorrent::ShareLimitsMode::Default:
             return TorrentShareLimitsWidget::tr("Default");
