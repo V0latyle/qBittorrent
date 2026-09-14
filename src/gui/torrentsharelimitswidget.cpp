@@ -57,7 +57,8 @@ namespace
         UninitializedModeIndex = -1,
         DefaultModeIndex,
         MatchAnyModeIndex,
-        MatchAllModeIndex
+        MatchAllModeIndex,
+        LayeredModeIndex
     };
 
     QString shareLimitActionName(const BitTorrent::ShareLimitAction shareLimitAction)
@@ -92,6 +93,9 @@ namespace
 
         case BitTorrent::ShareLimitsMode::MatchAll:
             return TorrentShareLimitsWidget::tr("Match all the limits");
+
+        case BitTorrent::ShareLimitsMode::Layered:
+            return TorrentShareLimitsWidget::tr("Two-stage (Primary or Inactive)");
 
         case BitTorrent::ShareLimitsMode::Default:
             return TorrentShareLimitsWidget::tr("Default");
