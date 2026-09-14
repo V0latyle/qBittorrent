@@ -2553,7 +2553,7 @@ void SessionImpl::processTorrentShareLimits(TorrentImpl *torrent)
 
         const bool ratioReached = (shareLimits.ratioLimit >= 0) && (ratio >= shareLimits.ratioLimit);
         const bool seedingTimeReached = (shareLimits.seedingTimeLimit >= 0) && (seedingTimeInMinutes >= shareLimits.seedingTimeLimit);
-        
+
         // Primary condition: Ratio OR Seeding Time (if configured)
         const bool primaryReached = ratioReached || seedingTimeReached;
 
