@@ -1,6 +1,6 @@
 name: CI - WebUI
 
-on: [workflow_dispatch]
+on: [pull_request, push]
 
 permissions: {}
 
