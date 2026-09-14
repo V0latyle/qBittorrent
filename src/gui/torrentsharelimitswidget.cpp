@@ -266,6 +266,9 @@ void TorrentShareLimitsWidget::setShareLimitsMode(const BitTorrent::ShareLimitsM
     case BitTorrent::ShareLimitsMode::MatchAll:
         m_ui->comboBoxMode->setCurrentIndex(MatchAllModeIndex);
         break;
+    case BitTorrent::ShareLimitsMode::Layered:
+        m_ui->comboBoxMode->setCurrentIndex(LayeredModeIndex);
+        break;
     }
 }
 
@@ -375,6 +378,8 @@ std::optional<BitTorrent::ShareLimitsMode> TorrentShareLimitsWidget::shareLimits
         return BitTorrent::ShareLimitsMode::MatchAny;
     case MatchAllModeIndex:
         return BitTorrent::ShareLimitsMode::MatchAll;
+    case LayeredModeIndex:
+        return BitTorrent::ShareLimitsMode::Layered;
     default:
         return std::nullopt;
     }
