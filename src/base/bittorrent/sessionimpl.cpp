@@ -628,6 +628,7 @@ SessionImpl::SessionImpl(QObject *parent)
     , m_maxOutstandingBlockRequests(BITTORRENT_SESSION_KEY(u"MaxOutstandingBlockRequests"_s), 2000)
     , m_isExcludedFileNamesEnabled(BITTORRENT_KEY(u"ExcludedFileNamesEnabled"_s), false)
     , m_excludedFileNames(BITTORRENT_SESSION_KEY(u"ExcludedFileNames"_s))
+    , m_isExcludeFilesWithoutExtensionEnabled(BITTORRENT_SESSION_KEY(u"ExcludeFilesWithoutExtension"_s), false)
     , m_bannedIPs(u"State/BannedIPs"_s, QStringList(), Algorithm::sorted<QStringList>)
     , m_resumeDataStorageType(BITTORRENT_SESSION_KEY(u"ResumeDataStorageType"_s), ResumeDataStorageType::Legacy)
     , m_isMergeTrackersEnabled(BITTORRENT_KEY(u"MergeTrackersEnabled"_s), false)
@@ -3249,7 +3250,18 @@ void SessionImpl::addMappedPorts(const QSet<quint16> &ports)
         for (const quint16 port : ports)
         {
             if (!m_mappedPorts.contains(port))
-                m_mappedPorts.insert(port, m_nativeSession->add_port_mapping(lt::session::tcp, port, port));
+            {
+                std::vector<lt::port_mapping_t> handles = m_nativeSession->add_port_mapping(lt::session::tcp, port, port);
+                const bool hasInvalid = std::erase_if(handles, [](const lt::port_mapping_t handle)
+                {
+                    return (handle < lt::port_mapping_t {0});
+                }) > 0;
+                if (hasInvalid)
+                    LogMsg(tr("Failed to add port mapping. Port: %1").arg(QString::number(port)), Log::WARNING);
+
+                if (!handles.empty())
+                    m_mappedPorts.insert(port, handles);
+            }
         }
     });
 }
@@ -4332,6 +4344,16 @@ void SessionImpl::setExcludedFileNames(const QStringList &excludedFileNames)
     }
 }
 
+bool SessionImpl::isExcludeFilesWithoutExtensionEnabled() const
+{
+    return m_isExcludeFilesWithoutExtensionEnabled;
+}
+
+void SessionImpl::setExcludeFilesWithoutExtensionEnabled(const bool enabled)
+{
+    m_isExcludeFilesWithoutExtensionEnabled = enabled;
+}
+
 void SessionImpl::populateExcludedFileNamesRegExpList()
 {
     const QStringList excludedNames = excludedFileNames();
@@ -4352,8 +4374,13 @@ void SessionImpl::applyFilenameFilter(const PathList &files, QList<DownloadPrior
     if (!isExcludedFileNamesEnabled())
         return;
 
-    const auto isFilenameExcluded = [patterns = m_excludedFileNamesRegExpList](const Path &fileName)
+    const auto isFilenameExcluded = [patterns = m_excludedFileNamesRegExpList
+        , excludeFilesWithoutExtension = isExcludeFilesWithoutExtensionEnabled()](const Path &fileName)
     {
+        // Only the file itself is checked for an extension; its parent folders never have one
+        if (excludeFilesWithoutExtension && fileName.extension().isEmpty())
+            return true;
+
         return std::ranges::any_of(patterns, [&fileName](const QRegularExpression &re)
         {
             Path path = fileName;
